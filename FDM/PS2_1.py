@@ -127,7 +127,7 @@ for tidx in range(mt-1):
 
     v = v + 1/6*(k1 + 2*k2 + 2*k3 + k4)
     t = t + ht
-
+    
     # Update plot every 50th time step
     if tidx % ceil(5) == 0 or tidx == mt-2:
         v0 = v[0:mx]

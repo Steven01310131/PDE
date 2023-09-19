@@ -5,6 +5,7 @@ from scipy.sparse import eye, vstack, kron, coo_matrix
 import operators as ops
 import matplotlib.pyplot as plt
 import rungekutta4 as rk4
+from math import sqrt, ceil
 
 #grid points 
 mx=101
@@ -60,7 +61,14 @@ L=vstack([beta_l*e_l,
             beta_l*e_r])
 P = I- HI@L.T@inv(L@HI@L.T)@L
 A=P@D2@P
+print(zero_matrix.shape)
+print(I.shape)
+print(A.shape)
+eigenvalues = np.linalg.eigvals(A)
 
+print(eigenvalues)
+e1 = np.array([1, 0])
+e2 = np.array([0, 1])
 
 
 W = np.block([
@@ -77,18 +85,27 @@ def rhs(x):
     return W@x
 ht=0.1*hx
 
+# Plot
+fig = plt.figure()
+ax = fig.add_subplot(111)
+v0 = v[0:mx]
+[line1] = ax.plot(xvec,v0,label='Solution')
+plt.legend()
+ax.set_xlim([xl,xr])
+ax.set_ylim([0,1.5])
+title = plt.title("t = " + "{:.2f}".format(0))
+plt.draw()
+plt.pause(0.5)
+
 t = 0
 
 for tidx in range(mt-1):
+    
+    v, t = rk4.step(rhs, v, t, ht)
 
-    k1 = ht*rhs(v)
-    k2 = ht*rhs(v + 0.5*k1)
-    k3 = ht*rhs(v + 0.5*k2)
-    k4 = ht*rhs(v + k3)
-    v = v + 1/6*(k1 + 2*k2 + 2*k3 + k4)
-    t = t + ht
-
-    if tidx in [50,100,150,200,250,300,400]:
-        
-        plt.plot(v[0:mx])
-        plt.show()
+    if tidx % ceil(5) == 0 or tidx == mt-2:
+        v0 = v[0:mx]
+        line1.set_ydata(v0)
+        title.set_text("t = " + "{:.2f}".format(tvec[tidx+1]))
+        plt.draw()
+        plt.pause(1e-3)

@@ -5,6 +5,7 @@ from scipy.sparse import eye, vstack, kron, coo_matrix
 import operators as ops
 import matplotlib.pyplot as plt
 import rungekutta4 as rk4
+from math import sqrt, ceil
 
 #grid points 
 mx=101
@@ -46,36 +47,30 @@ def theta1(x,t):
 def theta2(x, t):
     return -np.exp(-((x+t)/0.2)**2)
 
-# e1 = np.array([1, 0])
-# e2 = np.array([0, 1])
-
-# if order==4:
-#     H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_4th(mx, hx)
-
-# if order==6:
 H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_6th(mx, hx)
 
 # if method==1:
 L=vstack([beta_l*e_l,
             beta_l*e_r])
-P = I- HI@L.T@inv(L@HI@L.T)@L
-A=P@D2@P
+tau_l=1
+tau_r=-1
+SAT_l=tau_l*HI@(e_l.T@e_l)+sigma_l*HI@(d1_l.T@e_l)
+SAT_r=tau_r*HI@(e_r.T@(a*e_r+2*b*d1_r))
+D = D2 + SAT_l + SAT_r
 
 
 
-W = np.block([
-    [zero_matrix, I],
-    [A, zero_matrix]])
-
-
-def f(x):
-    return theta1(x, 0)
-
-v=np.hstack((f(xvec),np.zeros(mx)))
-v=v.reshape(-1,1)
-def rhs(x):
-    return W@x
-ht=0.1*hx
+# Plot
+fig = plt.figure()
+ax = fig.add_subplot(111)
+v0 = v[0:mx]
+[line1] = ax.plot(xvec,v0,label='Solution')
+plt.legend()
+ax.set_xlim([xl,xr])
+ax.set_ylim([0,1.5])
+title = plt.title("t = " + "{:.2f}".format(0))
+plt.draw()
+plt.pause(0.5)
 
 t = 0
 
@@ -88,7 +83,9 @@ for tidx in range(mt-1):
     v = v + 1/6*(k1 + 2*k2 + 2*k3 + k4)
     t = t + ht
 
-    if tidx in [50,100,150,200,250,300,400]:
-        
-        plt.plot(v[0:mx])
-        plt.show()
+    if tidx % ceil(5) == 0 or tidx == mt-2:
+        v0 = v[0:mx]
+        line1.set_ydata(v0)
+        title.set_text("t = " + "{:.2f}".format(tvec[tidx+1]))
+        plt.draw()
+        plt.pause(1e-3)
