@@ -54,13 +54,22 @@ L=vstack([beta_l*e_l,
             beta_l*e_r])
 tau_l=1
 tau_r=-1
-SAT_l=tau_l*HI@(e_l.T@e_l)+sigma_l*HI@(d1_l.T@e_l)
-SAT_r=tau_r*HI@(e_r.T@(a*e_r+2*b*d1_r))
+SAT_l=tau_l*HI@(e_l.T@dl_l)
+SAT_r=tau_r*HI@(e_r.T@dl_r)
 D = D2 + SAT_l + SAT_r
-
-
-
-# Plot
+ 
+eigD=np.linalg.eigvals(D.toarray())
+print(D)
+W = np.block([
+    [zero_matrix, I],
+    [D.toarray(), zero_matrix]])
+def f(x):
+    return theta1(x, 0)
+def rhs(x):
+    return W@x
+v=np.hstack((f(xvec),np.zeros(mx)))
+v=v.reshape(-1,1)
+# # Plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
 v0 = v[0:mx]

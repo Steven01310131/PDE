@@ -47,8 +47,6 @@ def theta1(x,t):
 def theta2(x, t):
     return -np.exp(-((x+t)/0.2)**2)
 
-# e1 = np.array([1, 0])
-# e2 = np.array([0, 1])
 
 # if order==4:
 #     H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_4th(mx, hx)
@@ -61,14 +59,6 @@ L=vstack([beta_l*e_l,
             beta_l*e_r])
 P = I- HI@L.T@inv(L@HI@L.T)@L
 A=P@D2@P
-print(zero_matrix.shape)
-print(I.shape)
-print(A.shape)
-eigenvalues = np.linalg.eigvals(A)
-
-print(eigenvalues)
-e1 = np.array([1, 0])
-e2 = np.array([0, 1])
 
 
 W = np.block([
@@ -83,7 +73,6 @@ v=np.hstack((f(xvec),np.zeros(mx)))
 v=v.reshape(-1,1)
 def rhs(x):
     return W@x
-ht=0.1*hx
 
 # Plot
 fig = plt.figure()
@@ -100,7 +89,7 @@ plt.pause(0.5)
 t = 0
 
 for tidx in range(mt-1):
-    
+
     v, t = rk4.step(rhs, v, t, ht)
 
     if tidx % ceil(5) == 0 or tidx == mt-2:
