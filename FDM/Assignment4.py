@@ -47,34 +47,29 @@ def theta1(x,t):
 def theta2(x, t):
     return -np.exp(-((x+t)/0.2)**2)
 
-
-# if order==4:
-#     H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_4th(mx, hx)
-
-# if order==6:
 H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_6th(mx, hx)
 
 # if method==1:
 L=vstack([beta_l*e_l,
             beta_l*e_r])
-P = I- HI@L.T@inv(L@HI@L.T)@L
-A=P@D2@P
-
-
+tau_l=1
+tau_r=-1
+SAT_l=tau_l*HI@(e_l.T@dl_l)
+SAT_r=tau_r*HI@(e_r.T@dl_r)
+D = D2 + SAT_l + SAT_r
+ 
+eigD=np.linalg.eigvals(D.toarray())
+print(D)
 W = np.block([
     [zero_matrix, I],
-    [A, zero_matrix]])
-
-
+    [D.toarray(), zero_matrix]])
 def f(x):
     return theta1(x, 0)
-
-v=np.hstack((f(xvec),np.zeros(mx)))
-v=v.reshape(-1,1)
 def rhs(x):
     return W@x
-
-# Plot
+v=np.hstack((f(xvec),np.zeros(mx)))
+v=v.reshape(-1,1)
+# # Plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
 v0 = v[0:mx]
@@ -90,7 +85,12 @@ t = 0
 
 for tidx in range(mt-1):
 
-    v, t = rk4.step(rhs, v, t, ht)
+    k1 = ht*rhs(v)
+    k2 = ht*rhs(v + 0.5*k1)
+    k3 = ht*rhs(v + 0.5*k2)
+    k4 = ht*rhs(v + k3)
+    v = v + 1/6*(k1 + 2*k2 + 2*k3 + k4)
+    t = t + ht
 
     if tidx % ceil(5) == 0 or tidx == mt-2:
         v0 = v[0:mx]

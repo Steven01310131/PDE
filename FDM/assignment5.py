@@ -52,8 +52,8 @@ H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_6th(mx, hx)
 # if method==1:
 L=vstack([beta_l*e_l,
             beta_l*e_r])
-tau_l=1
-tau_r=1
+tau_l=-1
+tau_r=-1
 SAT_l=-tau_l*HI@(e_l.T@dl_l)
 SAT_r=+tau_r*HI@(e_r.T@dl_r)
 D = D2 + SAT_l + SAT_r
