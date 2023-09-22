@@ -20,7 +20,7 @@ hx = (xr - xl)/(mx-1)
 xvec = np.linspace(xl,xr,mx)
 #end times 
 T=1
-CFL = 0.5
+
 ht_try = 0.01*hx
 mt = int(np.ceil(T/ht_try) + 1)  # round up so that (mt-1)*ht = T
 tvec, ht = np.linspace(0, T, mt, retstep=True)
@@ -57,6 +57,7 @@ H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_6th(mx, hx)
 # if method==1:
 L=vstack([beta_l*e_l,
             beta_l*e_r])
+
 P = I- HI@L.T@inv(L@HI@L.T)@L
 A=P@D2@P
 
@@ -71,6 +72,7 @@ def f(x):
 
 v=np.hstack((f(xvec),np.zeros(mx)))
 v=v.reshape(-1,1)
+
 def rhs(x):
     return W@x
 

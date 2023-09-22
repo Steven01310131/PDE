@@ -57,7 +57,7 @@ tau_r=-1
 SAT_l=-tau_l*HI@(e_l.T@dl_l)
 SAT_r=+tau_r*HI@(e_r.T@dl_r)
 D = D2 + SAT_l + SAT_r
-B = -tau_l*HI@(e_l.T@e_l) -tau_r*HI@(e_r.T@e_r)
+B = +tau_l*HI@(e_l.T@e_l) +tau_r*HI@(e_r.T@e_r)
 eigD=np.linalg.eigvals(D.toarray())
 
 W = np.block([
