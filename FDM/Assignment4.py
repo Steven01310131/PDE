@@ -19,13 +19,13 @@ hx = (xr - xl)/(mx-1)
 
 xvec = np.linspace(xl,xr,mx)
 #end times 
-T=1
-CFL = 0.5
-ht_try = 0.01*hx
-mt = int(np.ceil(T/ht_try) + 1)  # round up so that (mt-1)*ht = T
+T=3
+k=0.01
+ht_try = 0.001
+mt = int(np.ceil(T/k) + 1)  # round up so that (mt-1)*ht = T
 tvec, ht = np.linspace(0, T, mt, retstep=True)
 #time step 
-k=0.01
+
 method=1 #projection
 # method=0 # SAT
 #identity matrix 

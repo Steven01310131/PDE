@@ -19,9 +19,9 @@ hx = (xr - xl)/(mx-1)
 
 xvec = np.linspace(xl,xr,mx)
 #end times 
-T=1
+T=1.8
 CFL = 0.5
-ht_try = 0.01*hx
+ht_try = 0.001
 mt = int(np.ceil(T/ht_try) + 1)  # round up so that (mt-1)*ht = T
 tvec, ht = np.linspace(0, T, mt, retstep=True)
 #time step 
