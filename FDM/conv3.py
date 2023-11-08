@@ -1,102 +1,96 @@
-from cmath import log
 import numpy as np
-from scipy.sparse.linalg import inv
-from scipy.sparse import eye, vstack, kron, coo_matrix
-import operators as ops
 import matplotlib.pyplot as plt
-import rungekutta4 as rk4
-from math import sqrt, ceil
+from scipy.sparse.linalg import inv
+from scipy.sparse import eye, vstack, kron, coo_matrix, bmat
+import operators as ops
 
-#left and right boundary 
-xl = -1
-xr = 1
-#number of steps
+# Define a range of grid sizes to study
+mx_values = [34, 50, 100, 200, 300]
+convergence_rates = []
 
-#end times 
-T=1
+for mx in mx_values:
+    c = 1.  # for simplicity
+    alphal = 0.
+    alphar = 0.
+    betal = 1  # Dirichlet BC if it's the only one set to non-zero
+    betar = 1  # Dirichlet BC if it's the only one set to non-zero
+    gammal = 0  # Neumann BC if it's the only one set to non-zero
+    gammar = 0  # Neumann BC if it's the only one set to non-zero
+
+    T = 1.8  # end time
+    xl = -1.
+    xr = 1.
+
+    def theta1(x, t):
+        return np.exp(-((x-c*t)/0.2)**2)
+
+    def theta2(x, t):
+        return -np.exp(-((x+c*t)/0.2)**2)
+
+    def analytic_N(x, t):
+        return 0.5*theta1(x+2, t) - 0.5*theta2(x-2, t)
+
+    def analytic_D(x, t):
+        return -0.5*theta1(x+2, t) + 0.5*theta2(x-2, t)
+
+    def f(x):
+        return theta1(x, 0)
+
+    hx = (xr - xl)/(mx-1)
+    xvec = np.linspace(xl, xr, mx)
+    e1 = np.array([1, 0])
+    e2 = np.array([0, 1])
+
+    I2 = eye(2)
+    I = eye(2*mx)
+
+    e1 = np.array([1, 0])
+    e2 = np.array([0, 1])
+
+    #H, HI, D1, D2, e_l, e_r, d1_l, d1_r = ops.sbp_cent_4th(mx, hx)
+    H, HI, D1, D2, e_l, e_r, d1_l, d1_r = ops.sbp_cent_6th(mx, hx)
+
+    L = vstack([alphal*kron(e2, e_l)+betal*kron(e1, e_l)+gammal*kron(e1, d1_l),
+                alphar*kron(e2, e_r)+betar*kron(e1, e_r)+gammar*kron(e1, d1_r)])
+
+    HII = kron(I2, HI)
+    P = I - HII @ L.T @ inv(L @ HII @ L.T) @ L
+
+    A = bmat([[None, eye(mx)], [coo_matrix(c**2*D2), None]])
+    B = P @ A @ P
+
+    V = np.zeros(2 * mx)
+    V[:mx] = f(xvec)
+
+    cfl_factor = 0.1  
+    k_try = cfl_factor * hx
+
+    mt = int(np.ceil(T/k_try) + 1)
+    tvec, ht = np.linspace(0, T, mt, retstep=True)
+
+    t = 0
+    for tidx in range(mt):
+        k1 = ht * B @ V
+        k2 = ht * B @ (V + 0.5 * k1)
+        k3 = ht * B @ (V + 0.5 * k2)
+        k4 = ht * B @ (V + k3)
+        V = V + 1/6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        t = t + ht
+
+        if t > T:
+            break
 
 
-#time step 
-k=0.01
-method=1 #projection
+    t = T
 
-alpha_l = 0.
-alpha_r = 0.
-beta_l = 1  
-beta_r = 1  
-gamma_l = 0  
-gamma_r = 0  
+    # Calculate the error at t = 1.8
+    t_final = 1.8
+    error = np.sqrt(hx) * np.linalg.norm(analytic_D(xvec, t_final) - V[:mx])
 
+    convergence_rates.append(error)
 
-#Analytic solutions assuming the constant c=1
-def theta1(x,t):
-    return np.exp(-((x-t)/0.2)**2)
+    print(f"Error for mx = {mx}: {error}")
 
-def theta2(x, t):
-    return -np.exp(-((x+t)/0.2)**2)
-
-
-def f(x):
-    return theta1(x, 0)
-
-def rhs(x):
-    return W@x
-        
-
-
-if __name__ == "__main__":
-    mvec = np.array([50, 100, 200, 300])
-    order_vec = np.array([4, 6])
-    errvec = np.zeros((mvec.size, order_vec.size))
-
-    for order_idx, order in enumerate(order_vec):
-        for m_idx, m in enumerate(mvec):
-            # Modify grid points and order of accuracy
-            mx = m
-            hx = (xr - xl) / (mx - 1)
-            xvec = np.linspace(xl, xr, mx)
-            ht_try = 0.01 * hx
-            mt = int(np.ceil(T / ht_try) + 1)  # round up so that (mt-1)*ht = T
-            tvec, ht = np.linspace(0, T, mt, retstep=True)
-            I = np.identity(mx)
-            zero_matrix = np.zeros((mx, mx))
-            # Copy the relevant part of your code for solving the problem
-            if order == 4:
-                H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_4th(mx, hx)
-            elif order == 6:
-                H, HI, D1, D2, e_l, e_r, dl_l, dl_r = ops.sbp_cent_6th(mx, hx)
-            
-            # Rest of your code to set up operators and solve the problem
-            L = vstack([beta_l * e_l, beta_l * e_r])
-
-            P = I - HI @ L.T @ inv(L @ HI @ L.T) @ L
-            A = P @ D2 @ P
-
-            W = np.block([
-                [zero_matrix, I],
-                [A, zero_matrix]])
-            
-            
-            v = np.hstack((f(xvec), np.zeros(mx)))[:mx]  # Ensure v has 200 elements
-            v = v.reshape(-1, 1)
-            
-            
-            v_exact = np.vstack([theta1(xvec, T), theta2(xvec, T)])[:, :mx].T
-            
-            # Calculate the L2 norm error
-            error = np.sqrt(hx) * np.sqrt(np.sum((v - v_exact) ** 2))
-
-            errvec[m_idx, order_idx] = error
-
-    q = np.zeros((mvec.size, order_vec.size))
-    
-    for order_idx, order in enumerate(order_vec):
-        for m_idx, m in enumerate(mvec[1:]):
-            q[m_idx+1, order_idx] = -np.log(errvec[m_idx, order_idx] / errvec[m_idx+1, order_idx]) / np.log(mvec[m_idx] / mvec[m_idx+1])
-
-    for order_idx, order in enumerate(order_vec):
-        print("--- Order: %d ---" % order)
-        print("m\terr\t\tq")
-        for idx in range(mvec.size):
-            print("%d\t%.2f\t%.2f" % (mvec[idx], np.log10(errvec[idx, order_idx]), q[idx, order_idx]))
-        print("")
+for i in range(1, len(mx_values)):
+    rate = np.log(convergence_rates[i-1] / convergence_rates[i]) / np.log(mx_values[i-1] / mx_values[i])
+    print(f'Convergence rate for mx = {mx_values[i]}: {rate}')
